@@ -46,7 +46,7 @@
 #######################################
 # #       Importar Librerías        # #
 #######################################
-import Keylogger
+from Keylogger import Keylogger
 
 #######################################
 # #             Variables           # #

